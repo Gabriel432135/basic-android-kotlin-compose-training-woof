@@ -68,6 +68,8 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import com.example.woof.data.Dog
 import com.example.woof.data.dogs
 import com.example.woof.ui.theme.WoofTheme
@@ -98,6 +100,7 @@ fun WoofApp() {
             WoofTopAppBar()
         }
     ) { innerPadding ->
+
         LazyColumn(contentPadding = innerPadding) {
             items(dogs) {
                 DogItem(
@@ -106,6 +109,22 @@ fun WoofApp() {
                 )
             }
         }
+
+        /*
+        LazyColumn(contentPadding = innerPadding) {
+            items(
+                items = dogs,
+                key = { it.name },
+                contentType = { "dogItem" } // IMPORTANTE!
+            ) { dog ->
+                DogItemOptimized(
+                    dog,
+                    modifier =  Modifier.padding(all = dimensionResource(R.dimen.padding_small))
+                )
+            }
+        }
+
+         */
     }
 }
 
@@ -168,6 +187,72 @@ fun DogItem(
     }
 }
 
+//Função de testes
+@Composable
+fun DogItemOptimized(
+    dog: Dog,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    // Pré-carrega strings e imagem UMA vez
+    val name = stringResource(dog.name)
+    val age = stringResource(R.string.years_old, dog.age)
+    val hobby = stringResource(dog.hobbies)
+    //val painter =  painterResource(dog.imageResourceId)
+
+    Card(modifier) {
+        Column(
+            // REMOVIDO: animateContentSize (isso dava jank)
+            modifier = Modifier
+                .padding(8.dp)
+        ) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                /*
+                Image(
+                    painter = painter,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(MaterialTheme.shapes.small),
+                    contentScale = ContentScale.Crop
+                )
+                */
+                Column(modifier = Modifier.padding(start = 8.dp)) {
+                    Text(name, style = MaterialTheme.typography.titleMedium)
+                    Text(age, style = MaterialTheme.typography.bodyMedium)
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        contentDescription = null
+                    )
+                }
+            }
+
+            if (expanded) {
+                Text(
+                    text = "About",
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+                )
+                Text(
+                    text = hobby,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun DogHobby(
     @StringRes dogHobby: Int,
@@ -216,13 +301,15 @@ fun DogIcon(
     @DrawableRes dogIcon: Int,
     modifier: Modifier = Modifier
 ) {
+
     Image(
         modifier = modifier
             .size(dimensionResource(R.dimen.image_size))
             .padding(dimensionResource(R.dimen.padding_small))
             .clip(MaterialTheme.shapes.small),
         contentScale = ContentScale.Crop,
-        painter = painterResource(dogIcon),
+        painter = rememberAsyncImagePainter(dogIcon),
+
 
         // Content Description is not needed here - image is decorative, and setting a null content
         // description allows accessibility services to skip this element during navigation.
